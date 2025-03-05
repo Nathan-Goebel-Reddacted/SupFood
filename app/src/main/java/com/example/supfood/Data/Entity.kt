@@ -2,49 +2,65 @@ package com.example.supfood.data
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Ignore
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
 @Entity(tableName = "recipes")
 data class Recipe(
-    @PrimaryKey(autoGenerate = false) val recipeId: Int,
-    val title: String,
-    val publisher: String,
-    val featuredImage: String,
-    val rating: Int,
-    val sourceUrl: String,
-    val description: String,
-    val cookingInstruction: String,
-    val dateAdded: String,
-    val dateUpdated: String,
-    val longDateAdded: String,
-    val longDateUpdated: String,
-)
+    @PrimaryKey(autoGenerate = false) var recipeId: Int,
+    var title: String,
+    var publisher: String,
+    var featuredImage: String,
+    var rating: Int,
+    var sourceUrl: String,
+    var description: String,
+    var cookingInstruction: String,
+    var dateAdded: String,
+    var dateUpdated: String,
+    var longDateAdded: String,
+    var longDateUpdated: String,
 
-@Entity(tableName = "ingredients")
-data class Ingredients(
-    @PrimaryKey(autoGenerate = true) val ingredientsId:Int,
-    val name: String,
+    @Ignore // 🔹 Room ne stockera pas `ingredientList`
+    var ingredientList: List<String> = listOf()
+){
+    constructor() : this(0, "", "", "", 0, "", "", "", "", "", "", "") // ✅ Room peut maintenant instancier Recipe
+}
+
+
+@Entity(
+    tableName = "ingredients",
+    indices = [Index(value = ["ingredientsId"], unique = true), Index(value = ["name"], unique = true)]
 )
+data class Ingredients(
+    @PrimaryKey(autoGenerate = true) var ingredientsId: Int,
+    var name: String,
+){
+    constructor() : this(-1, "") // ✅ Room peut instancier Ingredients
+}
 
 @Entity(
     tableName = "ingredients_list",
-    primaryKeys = ["ingredientId", "recipeId"],  // Composite Primary Key
+    primaryKeys = ["ingredientsId", "recipeId"],
     foreignKeys = [
         ForeignKey(
             entity = Recipe::class,
             parentColumns = ["recipeId"],
             childColumns = ["recipeId"],
-            onDelete = ForeignKey.CASCADE,
+            onDelete = ForeignKey.CASCADE
         ),
         ForeignKey(
             entity = Ingredients::class,
-            parentColumns = ["ingredientId"],
-            childColumns = ["ingredientId"],
-            onDelete = ForeignKey.CASCADE,
+            parentColumns = ["ingredientsId"],
+            childColumns = ["ingredientsId"],
+            onDelete = ForeignKey.CASCADE
         )
-    ]
+    ],
+    indices = [Index(value = ["recipeId"]), Index(value = ["ingredientsId"])]
 )
 data class IngredientsList(
-    val ingredientId: Int,
-    val recipeId: Int,
-)
+    var ingredientsId: Int,
+    var recipeId: Int
+){
+    constructor() : this(0, 0) // ✅ Room peut instancier IngredientsList
+}
