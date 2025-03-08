@@ -1,9 +1,14 @@
 package com.example.supfood.logic
 
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.room.Transaction
 import com.example.supfood.data.APISearchResponse
 import com.example.supfood.data.Recipe
 import com.example.supfood.data.RetrofitInstance
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import retrofit2.http.GET
 import retrofit2.http.Headers
 import retrofit2.http.Query
@@ -16,13 +21,13 @@ interface Food2ForkApi {
     suspend fun searchRecipes(
         @Query("page") page: Int,
         @Query("query") query: String
-    ): APISearchResponse // 🔹 Retourne une liste de recettes
+    ): APISearchResponse
 
     @Headers("Authorization: Token 9c8b06d329136da358c2d00e76946b0111ce2c48")
     @GET("recipe/get/")
     suspend fun getRecipe(
-        @Query("id") id: String
-    ): Recipe // 🔹 Retourne directement un objet Recipe
+        @Query("id") id: Int
+    ): Recipe
 }
 
 // Classe qui gère la récupération des recettes
@@ -32,10 +37,10 @@ class RecipeRepository(private val recipeDao: RecipeDao) {
     suspend fun fetchRecipesPage(query: String, page: Int): List<Recipe> {
         return try {
             val response = api.searchRecipes(page, query)
-            response.results // Retourne uniquement les recettes de cette page
+            response.results
         } catch (e: Exception) {
             e.printStackTrace()
-            listOf() // Retourne une liste vide en cas d'erreur
+            listOf()
         }
     }
 
@@ -64,7 +69,7 @@ class RecipeRepository(private val recipeDao: RecipeDao) {
     }
 
     // 🔹 Récupérer une recette par ID (API)
-    suspend fun getRecipe(id: String): Recipe? {
+    suspend fun getRecipe(id: Int): Recipe? {
         return try {
             val recipe = api.getRecipe(id)
             recipe.ingredientList = recipe.ingredientList
@@ -100,4 +105,8 @@ class RecipeRepository(private val recipeDao: RecipeDao) {
     }
 
 }
+
+
+
+
 
