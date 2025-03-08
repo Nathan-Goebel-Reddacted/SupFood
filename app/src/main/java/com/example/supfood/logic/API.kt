@@ -1,14 +1,11 @@
 package com.example.supfood.logic
 
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+
+import android.util.Log
 import androidx.room.Transaction
 import com.example.supfood.data.APISearchResponse
 import com.example.supfood.data.Recipe
 import com.example.supfood.data.RetrofitInstance
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
 import retrofit2.http.GET
 import retrofit2.http.Headers
 import retrofit2.http.Query
@@ -36,10 +33,12 @@ class RecipeRepository(private val recipeDao: RecipeDao) {
 
     suspend fun fetchRecipesPage(query: String, page: Int): List<Recipe> {
         return try {
+            Log.d("RecipeRepository", "Fetching recipes for query: $query, page: $page")
             val response = api.searchRecipes(page, query)
+            Log.d("RecipeRepository", "Recipes received: ${response.results.size}")
             response.results
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e("RecipeRepository", "Error fetching recipes", e)
             listOf()
         }
     }
@@ -85,13 +84,18 @@ class RecipeRepository(private val recipeDao: RecipeDao) {
         val savedRecipes = mutableListOf<Recipe>()
 
         for (recipe in recipes) {
-            val existingRecipe = recipeDao.getRecipeWithIngredientsMapped(recipe.recipeId)
-
-            if (existingRecipe == null) {
-                recipeDao.saveRecipeWithIngredients(recipe, recipe.ingredientList)
-                savedRecipes.add(recipe)
-            } else {
-                savedRecipes.add(existingRecipe)
+            try {
+                val existingRecipe = recipeDao.getRecipeWithIngredientsMapped(recipe.recipeId)
+                if (existingRecipe == null) {
+                    recipeDao.saveRecipeWithIngredients(recipe, recipe.ingredientList)
+                    savedRecipes.add(recipe)
+                    Log.d("RecipeRepository", "Saved new recipe: ${recipe.title}")
+                } else {
+                    savedRecipes.add(existingRecipe)
+                    Log.d("RecipeRepository", "Recipe already exists: ${recipe.title}")
+                }
+            } catch (e: Exception) {
+                Log.e("RecipeRepository", "Error saving recipe: ${recipe.title}", e)
             }
         }
         return savedRecipes

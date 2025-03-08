@@ -88,7 +88,7 @@ fun RecipePage(recipe: Recipe){
                 )
             }
         }
-        //list of ingredient
+        //liste d'ingredient
 
         for( ingredient in recipe.ingredientList){
             Text(

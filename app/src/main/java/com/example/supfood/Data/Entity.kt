@@ -5,10 +5,12 @@ import androidx.room.ForeignKey
 import androidx.room.Ignore
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.google.gson.annotations.SerializedName
 
 @Entity(tableName = "recipes")
 data class Recipe(
-    @PrimaryKey(autoGenerate = false) var recipeId: Int,
+    @PrimaryKey(autoGenerate = false)
+    @SerializedName("pk") var recipeId: Int,
     var title: String,
     var publisher: String,
     var featuredImage: String,
@@ -36,7 +38,7 @@ data class Ingredients(
     @PrimaryKey(autoGenerate = true) var ingredientsId: Int,
     var name: String,
 ){
-    constructor() : this(-1, "") // ✅ Room peut instancier Ingredients
+    constructor() : this(-1, "")
 }
 
 @Entity(
