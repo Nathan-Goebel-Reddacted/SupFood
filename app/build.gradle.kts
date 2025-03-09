@@ -33,6 +33,9 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.3" // Mets la dernière version stable
+    }
     kotlinOptions {
         jvmTarget = "11"
     }
@@ -69,5 +72,10 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     //show images from url
     implementation(libs.coil.compose)
-
+    implementation(libs.ui)
+    implementation(libs.material3)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.activity.compose.v172)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.coil.compose.v240)
 }
