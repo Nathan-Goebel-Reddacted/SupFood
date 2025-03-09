@@ -1,8 +1,8 @@
-package com.example.supfood
-
+package com.example.supfood.ui.page
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
@@ -26,29 +25,31 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
 import com.example.supfood.data.Recipe
 
 
 
 @Composable
-fun RecipePage(recipe: Recipe){
-    val primaryColor = 0xFFFFd8a8
-    val secondaryColor = 0xFF1971C2
-    Column(
+fun RecipePage(recipe: Recipe, navController: NavHostController) {
+    val primaryColor = Color(0xFFFFD8A8)
+    val secondaryColor = Color(0xFF1971C2)
 
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(primaryColor))
+            .background(primaryColor)
             .padding(5.dp)
-    ){
-        //images + basic info
-        Row{
+    ) {
+        // Images + Infos de base
+        Row {
             Card(
                 shape = RoundedCornerShape(12.dp),
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                 modifier = Modifier
-                    .fillMaxWidth(0.5F)
+                    .fillMaxWidth(0.5f)
                     .padding(8.dp)
             ) {
                 Image(
@@ -60,46 +61,52 @@ fun RecipePage(recipe: Recipe){
                     contentScale = ContentScale.Crop
                 )
             }
-            Column{
+            Column(
+                modifier = Modifier.padding(8.dp)
+            ) {
                 Text(
                     text = recipe.title,
-                    color = Color(secondaryColor),
+                    color = secondaryColor,
                     fontWeight = FontWeight.Bold,
                     fontSize = 20.sp
                 )
                 Text(
-                    text =
-                        "Publisher:${recipe.publisher}\n" +
-                                "rating:${recipe.rating}",
-                    color = Color(secondaryColor),
+                    text = "Publisher: ${recipe.publisher}\nRating: ${recipe.rating}",
+                    color = secondaryColor,
                     fontSize = 14.sp
                 )
+
                 val uriHandler = LocalUriHandler.current
-                ClickableText(
+                Text(
                     text = AnnotatedString("Link To Original"),
                     style = TextStyle(
-                        color = Color(secondaryColor),
+                        color = secondaryColor,
                         fontSize = 14.sp,
                         textDecoration = TextDecoration.Underline
                     ),
-                    onClick = {
+                    modifier = Modifier.clickable {
                         uriHandler.openUri(recipe.sourceUrl)
                     }
                 )
             }
         }
-        //liste d'ingredient
 
-        for( ingredient in recipe.ingredientList){
-            Text(
-                text = ingredient,
-                color = Color(secondaryColor),
-                fontSize = 14.sp
-            )
-    }
+        // Liste d'ingrédients
+        Column(
+            modifier = Modifier.padding(8.dp)
+        ) {
+            recipe.ingredientList.forEach { ingredient ->
+                Text(
+                    text = "- $ingredient",
+                    color = secondaryColor,
+                    fontSize = 14.sp
+                )
+            }
+        }
     }
 }
 
+/*
 @Preview(showBackground = true)
 @Composable
 fun RecipePreview() {
@@ -128,5 +135,5 @@ fun RecipePreview() {
         )
     )
     RecipePage(recipe)
-}
+}*/
 

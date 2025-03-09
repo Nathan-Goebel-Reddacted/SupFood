@@ -79,7 +79,7 @@ class RecipeRepository(private val recipeDao: RecipeDao) {
         }
     }
 
-    suspend fun fetchAndSaveRecipes(query: String, maxResults: Int = 30): List<Recipe> {
+    suspend fun fetchAndSaveRecipes(query: String = "", maxResults: Int = 30): List<Recipe> {
         val recipes = searchRecipes(query, maxResults)
         val savedRecipes = mutableListOf<Recipe>()
 

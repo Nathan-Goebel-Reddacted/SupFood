@@ -75,7 +75,10 @@ dependencies {
     implementation(libs.ui)
     implementation(libs.material3)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose.v262)
     implementation(libs.androidx.activity.compose.v172)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.coil.compose.v240)
+    //navigation
+    implementation(libs.androidx.navigation.compose.v275)
 }

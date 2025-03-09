@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-class HomeViewModel(application: Application) : AndroidViewModel(application) {
+class SupfoodViewModel(application: Application) : AndroidViewModel(application) {
     private val recipeDao = AppDatabase.getDatabase(application).recipeDao()
     private val repository = RecipeRepository(recipeDao)
 
@@ -17,7 +17,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     val recipes: StateFlow<List<Recipe>> = _recipes
 
     init {
-        loadDefaultRecipes() // 🔹 Charger 10 recettes par défaut au démarrage
+        loadDefaultRecipes()
     }
 
     fun searchRecipes(query: String) {
@@ -29,7 +29,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun loadDefaultRecipes() {
         viewModelScope.launch {
-            val defaultRecipes = repository.fetchAndSaveRecipes("beef", 10) //
+            val defaultRecipes = repository.fetchAndSaveRecipes() //
             _recipes.value = defaultRecipes
         }
     }
