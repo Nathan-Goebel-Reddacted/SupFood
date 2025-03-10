@@ -11,22 +11,27 @@ import com.google.gson.annotations.SerializedName
 data class Recipe(
     @PrimaryKey(autoGenerate = false)
     @SerializedName("pk") var recipeId: Int,
+
     var title: String,
     var publisher: String,
-    var featuredImage: String,
-    var rating: Int,
-    var sourceUrl: String,
-    var description: String,
-    var cookingInstruction: String,
-    var dateAdded: String,
-    var dateUpdated: String,
-    var longDateAdded: String,
-    var longDateUpdated: String,
 
-    @Ignore // 🔹 Room ne stockera pas `ingredientList`
-    var ingredientList: List<String> = listOf()
-){
-    constructor() : this(0, "", "", "", 0, "", "", "", "", "", "", "") // ✅ Room peut maintenant instancier Recipe
+    @SerializedName("featured_image") var featuredImage: String,
+    var rating: Int,
+
+    @SerializedName("source_url") var sourceUrl: String,
+    var description: String? = null,
+
+    @SerializedName("cooking_instructions") var cookingInstructions: String? = null,
+
+    @SerializedName("date_added") var dateAdded: String,
+    @SerializedName("date_updated") var dateUpdated: String,
+
+    @SerializedName("long_date_added") var longDateAdded: Long,
+    @SerializedName("long_date_updated") var longDateUpdated: Long,
+
+    @Ignore @SerializedName("ingredients") var ingredientList: List<String> = listOf()
+) {
+    constructor() : this(0, "", "", "", 0, "", "", "", "", "", 0, 0, listOf())
 }
 
 
@@ -64,5 +69,5 @@ data class IngredientsList(
     var ingredientsId: Int,
     var recipeId: Int
 ){
-    constructor() : this(0, 0) // ✅ Room peut instancier IngredientsList
+    constructor() : this(0, 0)
 }

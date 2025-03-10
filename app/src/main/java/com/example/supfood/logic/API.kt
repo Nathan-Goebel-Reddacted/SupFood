@@ -31,14 +31,13 @@ interface Food2ForkApi {
 class RecipeRepository(private val recipeDao: RecipeDao) {
     private val api = RetrofitInstance.api
 
-    suspend fun fetchRecipesPage(query: String, page: Int): List<Recipe> {
+    suspend fun fetchRecipesPage(query: String="beef", page: Int): List<Recipe> {
         return try {
             Log.d("RecipeRepository", "Fetching recipes for query: $query, page: $page")
             val response = api.searchRecipes(page, query)
-            Log.d("RecipeRepository", "Recipes received: ${response.results.size}")
+            Log.d("RecipeRepository", "Raw API response: $response")
             response.results
         } catch (e: Exception) {
-            Log.e("RecipeRepository", "Error fetching recipes", e)
             listOf()
         }
     }
@@ -79,7 +78,7 @@ class RecipeRepository(private val recipeDao: RecipeDao) {
         }
     }
 
-    suspend fun fetchAndSaveRecipes(query: String = "", maxResults: Int = 30): List<Recipe> {
+    suspend fun fetchAndSaveRecipes(query: String = "beef", maxResults: Int = 30): List<Recipe> {
         val recipes = searchRecipes(query, maxResults)
         val savedRecipes = mutableListOf<Recipe>()
 
