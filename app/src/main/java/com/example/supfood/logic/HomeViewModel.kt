@@ -23,23 +23,89 @@ class SupfoodViewModel(application: Application) : AndroidViewModel(application)
     private var currentFilter = "beef"
 
     init {
-        loadMoreRecipes() // Charger les premières recettes
+        loadRecipesFromLocal() // Charger depuis la base locale en priorité
     }
 
+    /**
+     * Charger les recettes depuis la base de données locale
+     * Si vide, récupérer depuis l'API
+     */
+    fun loadRecipesFromLocal() {
+        viewModelScope.launch {
+            val localRecipes = recipeDao.getAllRecipes() // Récupérer depuis Room
+            if (localRecipes.isNotEmpty()) {
+                _recipes.value = localRecipes
+            } else {
+                loadMoreRecipes() // Si aucune recette locale, charger depuis l'API
+            }
+        }
+    }
+
+    /**
+     * Rechercher des recettes en mode en ligne et hors ligne
+     */
     fun searchRecipes(query: String) {
         viewModelScope.launch {
-            _recipes.value = emptyList()
+            _recipes.value = emptyList() // ✅ Efface les résultats précédents
             currentPage = 1
             isLoading = true
             hasMoreData = true
             currentFilter = query
 
-            val fetchedRecipes = repository.fetchAndSaveRecipes(query, page = currentPage)
-            _recipes.value = fetchedRecipes
+            try {
+                val fetchedRecipes = repository.fetchAndSaveRecipes(query, page = currentPage)
+
+                if (fetchedRecipes.isEmpty()) {
+                    // ✅ Si aucune recette n'est trouvée, affiche un message par défaut
+                    _recipes.value = listOf(
+                        Recipe(
+                            recipeId = -1,
+                            title = "Aucune recette trouvée",
+                            featuredImage = "",
+                            publisher = "",
+                            rating = 0,
+                            sourceUrl = "",
+                            description = "",
+                            cookingInstructions = "",
+                            dateAdded = "",
+                            dateUpdated = "",
+                            longDateAdded = 0,
+                            longDateUpdated = 0,
+                            ingredientList = listOf()
+                        )
+                    )
+                } else {
+                    _recipes.value = fetchedRecipes
+                }
+            } catch (e: Exception) {
+                // ✅ Gestion des erreurs (problème API, internet, etc.)
+                _recipes.value = listOf(
+                    Recipe(
+                        recipeId = -1,
+                        title = "Erreur lors du chargement des recettes",
+                        featuredImage = "",
+                        publisher = "",
+                        rating = 0,
+                        sourceUrl = "",
+                        description = "",
+                        cookingInstructions = "",
+                        dateAdded = "",
+                        dateUpdated = "",
+                        longDateAdded = 0,
+                        longDateUpdated = 0,
+                        ingredientList = listOf()
+                    )
+                )
+            }
+
             isLoading = false
         }
     }
 
+
+    /**
+     * Charger plus de recettes avec gestion du mode hors-ligne
+     */
     fun loadMoreRecipes() {
         if (isLoading || !hasMoreData) return
         isLoading = true

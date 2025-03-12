@@ -82,6 +82,7 @@ class RecipeRepository(private val recipeDao: RecipeDao) {
     suspend fun fetchAndSaveRecipes(query: String = "beef", page: Int = 1, maxResults: Int = 30): List<Recipe> {
         val recipes = searchRecipes(query, page, maxResults)
         val savedRecipes = mutableListOf<Recipe>()
+
         if (recipes.isEmpty()) {
             Log.d("RecipeRepository", "No more recipes.")
         }
@@ -90,6 +91,7 @@ class RecipeRepository(private val recipeDao: RecipeDao) {
             try {
                 val existingRecipe = recipeDao.getRecipeWithIngredientsMapped(recipe.recipeId)
                 if (existingRecipe == null) {
+                    recipeDao.insertRecipe(recipe) // 📌 Enregistrer la recette localement
                     recipeDao.saveRecipeWithIngredients(recipe, recipe.ingredientList)
                     savedRecipes.add(recipe)
                     Log.d("RecipeRepository", "Saved new recipe: ${recipe.title}")
@@ -103,6 +105,7 @@ class RecipeRepository(private val recipeDao: RecipeDao) {
         }
         return savedRecipes
     }
+
 
     @Transaction
     suspend fun getRecipeWithIngredientsMapped(recipeId: Int): Recipe? {

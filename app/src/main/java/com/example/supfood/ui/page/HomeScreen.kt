@@ -34,6 +34,8 @@ fun HomeScreen(navController: NavController, viewModel: SupfoodViewModel) {
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
 
+    var lastVisibleItemIndex by remember { mutableStateOf(0) } // ✅ Sauvegarde l'index du dernier élément visible
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -106,6 +108,7 @@ fun HomeScreen(navController: NavController, viewModel: SupfoodViewModel) {
                         .collect { lastVisibleItem ->
                             if (lastVisibleItem != null && lastVisibleItem >= recipes.size - 5) {
                                 coroutineScope.launch {
+                                    lastVisibleItemIndex = listState.firstVisibleItemIndex // ✅ Sauvegarde l'index
                                     viewModel.loadMoreRecipes()
                                 }
                             }
@@ -117,8 +120,14 @@ fun HomeScreen(navController: NavController, viewModel: SupfoodViewModel) {
             }
         }
     }
-}
 
+    // ✅ Maintenir la position du scroll après l'ajout de recettes
+    LaunchedEffect(recipes.size) {
+        coroutineScope.launch {
+            listState.scrollToItem(lastVisibleItemIndex) // ✅ Revient à la position sauvegardée
+        }
+    }
+}
 
 
 @Composable

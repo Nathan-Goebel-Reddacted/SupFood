@@ -82,6 +82,18 @@ interface RecipeDao {
             safeInsertIngredientList(IngredientsList(ingredientId, recipe.recipeId))
         }
     }
+
+    // Récupérer toutes les recettes enregistrées en local
+    @Query("SELECT * FROM recipes ORDER BY longDateAdded DESC")
+    suspend fun getAllRecipes(): List<Recipe>
+
+    // Récupérer les recettes en fonction du filtre appliqué (ex: "pasta")
+    @Query("SELECT * FROM recipes WHERE title LIKE '%' || :filter || '%' ORDER BY longDateAdded DESC")
+    suspend fun getRecipesByFilter(filter: String): List<Recipe>
+
+    // Récupérer des recettes en mode pagination
+    @Query("SELECT * FROM recipes ORDER BY longDateAdded DESC LIMIT :limit")
+    suspend fun getRecipesPaginated(limit: Int): List<Recipe>
 }
 
 
