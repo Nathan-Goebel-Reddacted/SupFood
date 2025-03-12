@@ -71,7 +71,7 @@ fun HomeScreen(navController: NavController, viewModel: SupfoodViewModel) {
             modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            listOf("Gluten", "Pasta", "Veggie").forEach { filter ->
+            listOf("Chicken", "Pasta", "Salad").forEach { filter ->
                 Button(
                     onClick = {
                         viewModel.searchRecipes(filter)
