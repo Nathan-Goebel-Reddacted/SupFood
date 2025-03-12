@@ -34,7 +34,7 @@ class RecipeRepository(private val recipeDao: RecipeDao) {
     suspend fun fetchRecipesPage(query: String="beef", page: Int): List<Recipe> {
         return try {
             Log.d("RecipeRepository", "Fetching recipes for query: $query, page: $page")
-            val response = api.searchRecipes(page, query)
+            val response = api.searchRecipes(page, query) // Ici on passe bien `page`
             Log.d("RecipeRepository", "Raw API response: $response")
             response.results
         } catch (e: Exception) {
@@ -43,15 +43,15 @@ class RecipeRepository(private val recipeDao: RecipeDao) {
     }
 
     // 🔹 Récupérer plusieurs recettes en effectuant plusieurs appels API
-    suspend fun searchRecipes(query: String, maxResults: Int = 30): List<Recipe> {
+    suspend fun searchRecipes(query: String, page: Int, maxResults: Int = 30): List<Recipe> {
         val recipes = mutableListOf<Recipe>()
-        var currentPage = 1
         var totalFetched = 0
+        var currentPage = page // Utilisation de `page` passé en paramètre
 
         while (totalFetched < maxResults) {
             val recipesPage = fetchRecipesPage(query, currentPage)
 
-            if (recipesPage.isEmpty()) break
+            if (recipesPage.isEmpty()) break // Stop si plus de résultats
 
             val remainingNeeded = maxResults - totalFetched
             val recipesToAdd = recipesPage.take(remainingNeeded)
@@ -59,12 +59,13 @@ class RecipeRepository(private val recipeDao: RecipeDao) {
             recipes.addAll(recipesToAdd)
             totalFetched += recipesToAdd.size
 
-            if (recipesToAdd.size < 30) break
+            if (recipesToAdd.size < 30) break // Si une page contient moins de 30 recettes, plus rien à charger
 
-            currentPage++
+            currentPage++ // Passer à la page suivante
         }
         return recipes
     }
+
 
     // 🔹 Récupérer une recette par ID (API)
     suspend fun getRecipe(id: Int): Recipe? {
@@ -78,9 +79,12 @@ class RecipeRepository(private val recipeDao: RecipeDao) {
         }
     }
 
-    suspend fun fetchAndSaveRecipes(query: String = "beef", maxResults: Int = 30): List<Recipe> {
-        val recipes = searchRecipes(query, maxResults)
+    suspend fun fetchAndSaveRecipes(query: String = "beef", page: Int = 1, maxResults: Int = 30): List<Recipe> {
+        val recipes = searchRecipes(query, page, maxResults)
         val savedRecipes = mutableListOf<Recipe>()
+        if (recipes.isEmpty()) {
+            Log.d("RecipeRepository", "No more recipes.")
+        }
 
         for (recipe in recipes) {
             try {
