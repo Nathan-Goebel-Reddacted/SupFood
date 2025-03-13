@@ -103,30 +103,34 @@ fun HomeScreen(navController: NavController, viewModel: SupfoodViewModel) {
                 }
             }
 
-
-            //Chargement automatique quand on arrive en bas
+            // Infinite Scroll Loader
             item {
-                LaunchedEffect(listState) {
-                    snapshotFlow { listState.layoutInfo.visibleItemsInfo }
-                        .collect { visibleItems ->
-                            val firstVisibleItem = visibleItems.firstOrNull()?.index
-                            val lastVisibleItem = visibleItems.lastOrNull()?.index
+                LaunchedEffect(Unit) {
+                    snapshotFlow { listState.firstVisibleItemIndex }
+                        .collect { firstVisibleIndex ->
+                            val lastVisibleItem = firstVisibleIndex + listState.layoutInfo.visibleItemsInfo.size
 
-                            if (lastVisibleItem != null && lastVisibleItem >= recipes.size - 5) {
+                            //when scrolling near the end
+                            if (lastVisibleItem >= recipes.size - 5 && !viewModel.isLoading) {
+                                Log.d("LazyColumn", "Loading more recipes...")
                                 coroutineScope.launch {
-                                    lastVisibleItemIndex = listState.firstVisibleItemIndex
+                                    lastVisibleItemIndex = firstVisibleIndex
                                     viewModel.loadMoreRecipes()
                                 }
                             }
 
-                            if (firstVisibleItem != null && firstVisibleItem <= 5) {
+                            //when scrolling near the top
+                            if (firstVisibleIndex <= 3 && !viewModel.isLoading) {
+                                Log.d("LazyColumn", "Loading previous recipes...")
                                 coroutineScope.launch {
-                                    lastVisibleItemIndex = listState.firstVisibleItemIndex
+                                    lastVisibleItemIndex = firstVisibleIndex
                                     viewModel.loadPreviousRecipes()
                                 }
                             }
                         }
                 }
+
+                //Loading Indicator
                 if (viewModel.isLoading) {
                     CircularProgressIndicator(modifier = Modifier.fillMaxWidth().padding(16.dp))
                 }
@@ -137,6 +141,7 @@ fun HomeScreen(navController: NavController, viewModel: SupfoodViewModel) {
     //Maintenir la position du scroll après l'ajout de recettes
     LaunchedEffect(recipes.size) {
         coroutineScope.launch {
+            Log.d("LazyColumn", "Restoring scroll position to $lastVisibleItemIndex")
             listState.scrollToItem(lastVisibleItemIndex)
         }
     }

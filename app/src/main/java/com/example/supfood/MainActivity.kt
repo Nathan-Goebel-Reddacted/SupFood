@@ -39,9 +39,14 @@ class MainActivity : ComponentActivity() {
                     Log.d("Navigation", "Showing LoadScreen()")
                     LoadScreen(navController)
 
+                    val hasFetchedData = remember { mutableStateOf(false) }
+
                     LaunchedEffect(Unit) {
-                        Log.d("MainActivity", "Fetching recipes...")
-                        viewModel.searchRecipes("")
+                        if (!hasFetchedData.value) {
+                            Log.d("MainActivity", "Fetching recipes...")
+                            viewModel.searchRecipes("")
+                            hasFetchedData.value = true
+                        }
                     }
                 }
 
