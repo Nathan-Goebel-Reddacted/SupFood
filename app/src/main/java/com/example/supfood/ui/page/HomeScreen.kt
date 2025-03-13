@@ -34,7 +34,7 @@ fun HomeScreen(navController: NavController, viewModel: SupfoodViewModel) {
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
 
-    var lastVisibleItemIndex by remember { mutableStateOf(0) } // ✅ Sauvegarde l'index du dernier élément visible
+    var lastVisibleItemIndex by remember { mutableIntStateOf(0) }
 
     Column(
         modifier = Modifier
@@ -92,16 +92,16 @@ fun HomeScreen(navController: NavController, viewModel: SupfoodViewModel) {
         }
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 🍽️ Liste des recettes avec Scroll Infini
+        //Liste des recettes avec Scroll Infini
         LazyColumn(
-            state = listState, // ✅ Maintient la position du scroll
+            state = listState,
             modifier = Modifier.fillMaxSize()
         ) {
             items(recipes, key = { it.recipeId }) { recipe ->
                 RecipeItem(recipe, navController)
             }
 
-            // 🔄 Chargement automatique quand on arrive en bas
+            //Chargement automatique quand on arrive en bas
             item {
                 LaunchedEffect(listState) {
                     snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
@@ -121,10 +121,10 @@ fun HomeScreen(navController: NavController, viewModel: SupfoodViewModel) {
         }
     }
 
-    // ✅ Maintenir la position du scroll après l'ajout de recettes
+    //Maintenir la position du scroll après l'ajout de recettes
     LaunchedEffect(recipes.size) {
         coroutineScope.launch {
-            listState.scrollToItem(lastVisibleItemIndex) // ✅ Revient à la position sauvegardée
+            listState.scrollToItem(lastVisibleItemIndex)
         }
     }
 }

@@ -3,7 +3,7 @@ package com.example.supfood.logic
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.media3.common.util.Log
+import android.util.Log
 import com.example.supfood.data.AppDatabase
 import com.example.supfood.data.Recipe
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,30 +23,27 @@ class SupfoodViewModel(application: Application) : AndroidViewModel(application)
     private var currentFilter = "beef"
 
     init {
-        loadRecipesFromLocal() // Charger depuis la base locale en priorité
+        loadRecipesFromLocal()
     }
 
-    /**
-     * Charger les recettes depuis la base de données locale
-     * Si vide, récupérer depuis l'API
-     */
+    //Charger les recettes depuis la base de données locale
+    //Si vide, récupérer depuis l'API
     fun loadRecipesFromLocal() {
         viewModelScope.launch {
-            val localRecipes = recipeDao.getAllRecipes() // Récupérer depuis Room
+            val localRecipes = recipeDao.getAllRecipes()
             if (localRecipes.isNotEmpty()) {
                 _recipes.value = localRecipes
             } else {
-                loadMoreRecipes() // Si aucune recette locale, charger depuis l'API
+                loadMoreRecipes()
             }
         }
     }
 
-    /**
-     * Rechercher des recettes en mode en ligne et hors ligne
-     */
+
+    //Rechercher des recettes en mode en ligne et hors ligne
     fun searchRecipes(query: String) {
         viewModelScope.launch {
-            _recipes.value = emptyList() // ✅ Efface les résultats précédents
+            _recipes.value = emptyList()
             currentPage = 1
             isLoading = true
             hasMoreData = true
@@ -56,7 +53,6 @@ class SupfoodViewModel(application: Application) : AndroidViewModel(application)
                 val fetchedRecipes = repository.fetchAndSaveRecipes(query, page = currentPage)
 
                 if (fetchedRecipes.isEmpty()) {
-                    // ✅ Si aucune recette n'est trouvée, affiche un message par défaut
                     _recipes.value = listOf(
                         Recipe(
                             recipeId = -1,
@@ -78,7 +74,6 @@ class SupfoodViewModel(application: Application) : AndroidViewModel(application)
                     _recipes.value = fetchedRecipes
                 }
             } catch (e: Exception) {
-                // ✅ Gestion des erreurs (problème API, internet, etc.)
                 _recipes.value = listOf(
                     Recipe(
                         recipeId = -1,
@@ -102,10 +97,7 @@ class SupfoodViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-
-    /**
-     * Charger plus de recettes avec gestion du mode hors-ligne
-     */
+    //Charger plus de recettes avec gestion du mode hors-ligne
     fun loadMoreRecipes() {
         if (isLoading || !hasMoreData) return
         isLoading = true

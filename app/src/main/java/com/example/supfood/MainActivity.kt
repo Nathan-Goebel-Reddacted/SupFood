@@ -63,7 +63,7 @@ class MainActivity : ComponentActivity() {
 
                     if (recipe != null) {
                         Log.d("RecipePage", "Navigating to RecipePage for recipe ID: $recipeId")
-                        RecipePage(recipe,navController)
+                        RecipePage(recipe)
                     } else {
                         Log.d("RecipePage", "Recipe not found for ID: $recipeId, returning to home")
                         navController.popBackStack()

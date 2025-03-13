@@ -22,18 +22,15 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
-import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
 import com.example.supfood.data.Recipe
 
 
 
 @Composable
-fun RecipePage(recipe: Recipe, navController: NavHostController) {
+fun RecipePage(recipe: Recipe) {
     val primaryColor = Color(0xFFFFD8A8)
     val secondaryColor = Color(0xFF1971C2)
 

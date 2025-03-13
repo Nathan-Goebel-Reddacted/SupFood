@@ -16,33 +16,19 @@ interface RecipeDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertIngredient(ingredient: Ingredients): Long
 
-    //Vérifier si un ingrédient existe déjà en base
-    @Query("SELECT * FROM ingredients WHERE name = :name LIMIT 1")
-    suspend fun getIngredientByName(name: String): Ingredients?
-
-    //Insérer un ingrédient en évitant les doublons
-    suspend fun safeInsertIngredient(ingredient: Ingredients): Int {
-        val existingIngredient = getIngredientByName(ingredient.name)
-        return existingIngredient?.ingredientsId ?: insertIngredient(ingredient).toInt()
-    }
-
     //Insérer une relation `Recipe <-> Ingredient` (évite les doublons)
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertIngredientList(crossRef: IngredientsList)
+
+    //Vérifier si un ingrédient existe déjà en base
+    @Query("SELECT * FROM ingredients WHERE name = :name LIMIT 1")
+    suspend fun getIngredientByName(name: String): Ingredients?
 
     //Vérifier si une relation `Recipe <-> Ingredient` existe déjà
     @Query("""
         SELECT * FROM ingredients_list WHERE ingredientsId = :ingredientId AND recipeId = :recipeId LIMIT 1
     """)
     suspend fun getIngredientListEntry(ingredientId: Int, recipeId: Int): IngredientsList?
-
-    //Insérer une relation `Recipe <-> Ingredient` uniquement si elle n’existe pas
-    suspend fun safeInsertIngredientList(crossRef: IngredientsList) {
-        val existingEntry = getIngredientListEntry(crossRef.ingredientsId, crossRef.recipeId)
-        if (existingEntry == null) {
-            insertIngredientList(crossRef)
-        }
-    }
 
     //Récupérer une recette spécifique par son ID
     @Query("SELECT * FROM recipes WHERE recipeId = :id LIMIT 1")
@@ -56,13 +42,26 @@ interface RecipeDao {
     """)
     suspend fun getIngredientsForRecipe(recipeId: Int): List<Ingredients>
 
-    //Récupérer toutes les recettes contenant un ingrédient spécifique
-    @Query("""
-        SELECT recipes.* FROM recipes
-        INNER JOIN ingredients_list ON recipes.recipeId = ingredients_list.recipeId
-        WHERE ingredients_list.ingredientsId = :ingredientId
-    """)
-    suspend fun getRecipesForIngredient(ingredientId: Int): List<Recipe>
+    // Récupérer toutes les recettes enregistrées en local
+    @Query("SELECT * FROM recipes ORDER BY longDateAdded DESC")
+    suspend fun getAllRecipes(): List<Recipe>
+
+    @Query("SELECT * FROM recipes WHERE title LIKE '%' || :query || '%' ORDER BY longDateAdded DESC")
+    suspend fun searchRecipes(query: String): List<Recipe>
+
+    //Insérer un ingrédient en évitant les doublons
+    suspend fun safeInsertIngredient(ingredient: Ingredients): Int {
+        val existingIngredient = getIngredientByName(ingredient.name)
+        return existingIngredient?.ingredientsId ?: insertIngredient(ingredient).toInt()
+    }
+
+    //Insérer une relation `Recipe <-> Ingredient` uniquement si elle n’existe pas
+    suspend fun safeInsertIngredientList(crossRef: IngredientsList) {
+        val existingEntry = getIngredientListEntry(crossRef.ingredientsId, crossRef.recipeId)
+        if (existingEntry == null) {
+            insertIngredientList(crossRef)
+        }
+    }
 
     //Récupérer une recette avec ses ingrédients en une seule transaction
     @Transaction
@@ -83,17 +82,6 @@ interface RecipeDao {
         }
     }
 
-    // Récupérer toutes les recettes enregistrées en local
-    @Query("SELECT * FROM recipes ORDER BY longDateAdded DESC")
-    suspend fun getAllRecipes(): List<Recipe>
-
-    // Récupérer les recettes en fonction du filtre appliqué (ex: "pasta")
-    @Query("SELECT * FROM recipes WHERE title LIKE '%' || :filter || '%' ORDER BY longDateAdded DESC")
-    suspend fun getRecipesByFilter(filter: String): List<Recipe>
-
-    // Récupérer des recettes en mode pagination
-    @Query("SELECT * FROM recipes ORDER BY longDateAdded DESC LIMIT :limit")
-    suspend fun getRecipesPaginated(limit: Int): List<Recipe>
 }
 
 
