@@ -18,103 +18,117 @@ class SupfoodViewModel(application: Application) : AndroidViewModel(application)
     val recipes: StateFlow<List<Recipe>> = _recipes
 
     private var currentPage = 1
-    var isLoading = false
+    private val allRecipes = mutableListOf<Recipe>()
     private var hasMoreData = true
+    var isLoading = false
     private var currentFilter = "beef"
 
     init {
         loadRecipesFromLocal()
     }
 
-    //Charger les recettes depuis la base de données locale
-    //Si vide, récupérer depuis l'API
-    fun loadRecipesFromLocal() {
+    // Charger les recettes depuis la base locale
+    private fun loadRecipesFromLocal() {
         viewModelScope.launch {
             val localRecipes = recipeDao.getAllRecipes()
             if (localRecipes.isNotEmpty()) {
-                _recipes.value = localRecipes
+                allRecipes.addAll(localRecipes)
+                _recipes.value = allRecipes
             } else {
                 loadMoreRecipes()
             }
         }
     }
 
-
-    //Rechercher des recettes en mode en ligne et hors ligne
+    // Recherche avec filtrage
     fun searchRecipes(query: String) {
         viewModelScope.launch {
+            allRecipes.clear()
             _recipes.value = emptyList()
             currentPage = 1
-            isLoading = true
             hasMoreData = true
             currentFilter = query
-
-            try {
-                val fetchedRecipes = repository.fetchAndSaveRecipes(query, page = currentPage)
-
-                if (fetchedRecipes.isEmpty()) {
-                    _recipes.value = listOf(
-                        Recipe(
-                            recipeId = -1,
-                            title = "Aucune recette trouvée",
-                            featuredImage = "",
-                            publisher = "",
-                            rating = 0,
-                            sourceUrl = "",
-                            description = "",
-                            cookingInstructions = "",
-                            dateAdded = "",
-                            dateUpdated = "",
-                            longDateAdded = 0,
-                            longDateUpdated = 0,
-                            ingredientList = listOf()
-                        )
-                    )
-                } else {
-                    _recipes.value = fetchedRecipes
-                }
-            } catch (e: Exception) {
-                _recipes.value = listOf(
-                    Recipe(
-                        recipeId = -1,
-                        title = "Erreur lors du chargement des recettes",
-                        featuredImage = "",
-                        publisher = "",
-                        rating = 0,
-                        sourceUrl = "",
-                        description = "",
-                        cookingInstructions = "",
-                        dateAdded = "",
-                        dateUpdated = "",
-                        longDateAdded = 0,
-                        longDateUpdated = 0,
-                        ingredientList = listOf()
-                    )
-                )
-            }
-
-            isLoading = false
+            loadMoreRecipes()
         }
     }
 
-    //Charger plus de recettes avec gestion du mode hors-ligne
     fun loadMoreRecipes() {
-        if (isLoading || !hasMoreData) return
+        if (isLoading || !hasMoreData) {
+            Log.w("SupfoodViewModel", "Tentative de chargement ignorée : isLoading=$isLoading, hasMoreData=$hasMoreData")
+            return
+        }
         isLoading = true
 
         viewModelScope.launch {
-            Log.d("DEBUG", "Chargement de plus de recettes avec filtre : $currentFilter, page $currentPage")
+            Log.d("SupfoodViewModel", "Début du chargement des recettes: page=$currentPage, filtre=$currentFilter")
 
-            val moreRecipes = repository.fetchAndSaveRecipes(currentFilter, page = currentPage)
+            try {
+                val newRecipes = repository.fetchAndSaveRecipes(currentFilter, currentPage)
 
-            if (moreRecipes.isNotEmpty()) {
-                _recipes.value += moreRecipes
-                currentPage++
-            } else {
-                hasMoreData = false
+                if (newRecipes.isNotEmpty()) {
+                    allRecipes.addAll(newRecipes)
+                    currentPage++
+
+                    Log.d("SupfoodViewModel", "Nouvelle page chargée. Nombre total de recettes en mémoire: ${allRecipes.size}")
+
+                    // Limiter le nombre total de recettes en mémoire à 90 max
+                    if (allRecipes.size > 90) {
+                        val removedCount = allRecipes.size - 90
+                        allRecipes.subList(0, removedCount).clear()
+                        Log.i("SupfoodViewModel", "Suppression de $removedCount anciennes recettes pour limiter la mémoire")
+                    }
+
+                    _recipes.value = allRecipes.toList()
+                } else {
+                    hasMoreData = false
+                    Log.w("SupfoodViewModel", "Aucune nouvelle recette trouvée, arrêt du chargement")
+                }
+            } catch (e: Exception) {
+                Log.e("SupfoodViewModel", "Erreur lors du chargement des recettes", e)
             }
 
             isLoading = false
+            Log.d("SupfoodViewModel", "Fin du chargement des recettes")
+        }
+    }
+
+    fun loadPreviousRecipes() {
+        if (isLoading || currentPage == 1) {
+            Log.w("SupfoodViewModel", "Tentative de rechargement ignorée : isLoading=$isLoading, currentPage=$currentPage")
+            return
+        }
+        isLoading = true
+
+        viewModelScope.launch {
+            val previousPage = currentPage - 1
+            Log.d("SupfoodViewModel", "Chargement des anciennes recettes: page=$previousPage, filtre=$currentFilter")
+
+            try {
+                val oldRecipes = repository.fetchAndSaveRecipes(currentFilter, previousPage)
+
+                if (oldRecipes.isNotEmpty()) {
+                    allRecipes.addAll(0, oldRecipes)
+                    currentPage--
+
+                    Log.d("SupfoodViewModel", "Anciennes recettes chargées. Nombre total de recettes en mémoire: ${allRecipes.size}")
+
+                    // Supprimer les recettes trop loin en avant
+                    if (allRecipes.size > 90) {
+                        val removedCount = allRecipes.size - 90
+                        allRecipes.subList(90, allRecipes.size).clear()
+                        Log.i("SupfoodViewModel", "Suppression de $removedCount recettes trop récentes pour limiter la mémoire")
+                    }
+
+                    _recipes.value = allRecipes.toList()
+                } else {
+                    Log.w("SupfoodViewModel", "Aucune ancienne recette trouvée")
+                }
+            } catch (e: Exception) {
+                Log.e("SupfoodViewModel", "Erreur lors du chargement des anciennes recettes", e)
+            }
+
+            isLoading = false
+            Log.d("SupfoodViewModel", "Fin du chargement des anciennes recettes")
         }
     }
 }

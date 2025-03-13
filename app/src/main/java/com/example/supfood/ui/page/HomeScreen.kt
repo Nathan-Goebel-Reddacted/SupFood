@@ -6,7 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.*
@@ -42,7 +42,7 @@ fun HomeScreen(navController: NavController, viewModel: SupfoodViewModel) {
             .background(primaryColor)
             .padding(16.dp)
     ) {
-        // 🔎 Barre de recherche
+        //Barre de recherche
         Row(
             modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween
@@ -68,7 +68,7 @@ fun HomeScreen(navController: NavController, viewModel: SupfoodViewModel) {
             }
         }
 
-        // 📌 Boutons de filtres
+        //Boutons de filtres
         Row(
             modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
@@ -97,19 +97,30 @@ fun HomeScreen(navController: NavController, viewModel: SupfoodViewModel) {
             state = listState,
             modifier = Modifier.fillMaxSize()
         ) {
-            items(recipes, key = { it.recipeId }) { recipe ->
-                RecipeItem(recipe, navController)
+            itemsIndexed(recipes) { index, recipe ->
+                RecipeItem(recipe, navController, index)
             }
+
 
             //Chargement automatique quand on arrive en bas
             item {
                 LaunchedEffect(listState) {
-                    snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
-                        .collect { lastVisibleItem ->
+                    snapshotFlow { listState.layoutInfo.visibleItemsInfo }
+                        .collect { visibleItems ->
+                            val firstVisibleItem = visibleItems.firstOrNull()?.index
+                            val lastVisibleItem = visibleItems.lastOrNull()?.index
+
                             if (lastVisibleItem != null && lastVisibleItem >= recipes.size - 5) {
                                 coroutineScope.launch {
-                                    lastVisibleItemIndex = listState.firstVisibleItemIndex // ✅ Sauvegarde l'index
+                                    lastVisibleItemIndex = listState.firstVisibleItemIndex
                                     viewModel.loadMoreRecipes()
+                                }
+                            }
+
+                            if (firstVisibleItem != null && firstVisibleItem <= 5) {
+                                coroutineScope.launch {
+                                    lastVisibleItemIndex = listState.firstVisibleItemIndex
+                                    viewModel.loadPreviousRecipes()
                                 }
                             }
                         }
@@ -131,10 +142,10 @@ fun HomeScreen(navController: NavController, viewModel: SupfoodViewModel) {
 
 
 @Composable
-fun RecipeItem(recipe: Recipe, navController: NavController) {
+fun RecipeItem(recipe: Recipe, navController: NavController, index: Int) {
     val secondaryColor = Color(0xFF1971C2)
 
-    Log.d("RecipeItem", "Image URL: ${recipe.featuredImage}")
+    Log.d("RecipeItem", "Index: $index | ID: ${recipe.recipeId} | Title: ${recipe.title}")
 
     Card(
         modifier = Modifier
