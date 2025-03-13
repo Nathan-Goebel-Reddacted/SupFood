@@ -70,7 +70,7 @@ class SupfoodViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             try {
                 if (getApplication<Application>().isOnline()) {
-                    //Online Mode
+                    //Mode en ligne
                     val newRecipes = repository.fetchAndSaveRecipes(currentFilter, currentPage)
 
                     if (newRecipes.isNotEmpty()) {
@@ -81,9 +81,10 @@ class SupfoodViewModel(application: Application) : AndroidViewModel(application)
                         hasMoreData = false
                     }
                 } else {
-                    //Offline Mode
-                    Log.w("SupfoodViewModel", "No internet. Loading only local recipes.")
-                    val localRecipes = recipeDao.getAllRecipes()
+                    //Mode hors ligne
+                    Log.w("SupfoodViewModel", "No internet. Searching local recipes with filter: $currentFilter")
+
+                    val localRecipes = recipeDao.searchRecipes(currentFilter)
                         .mapNotNull { recipeDao.getRecipeWithIngredientsMapped(it.recipeId) }
 
                     if (localRecipes.isNotEmpty()) {
@@ -91,7 +92,7 @@ class SupfoodViewModel(application: Application) : AndroidViewModel(application)
                         allRecipes.addAll(localRecipes)
                         _recipes.value = allRecipes.toList()
                     } else {
-                        Log.w("SupfoodViewModel", "No local recipes available.")
+                        Log.w("SupfoodViewModel", "No local recipes available for filter: $currentFilter")
                     }
                 }
             } catch (e: Exception) {
