@@ -30,20 +30,23 @@ class SupfoodViewModel(application: Application) : AndroidViewModel(application)
     // Charger les recettes depuis la base locale
     private fun loadRecipesFromLocal() {
         viewModelScope.launch {
-            val localRecipes = recipeDao.getAllRecipes().map { recipe ->
-                val ingredients = recipeDao.getIngredientsForRecipe(recipe.recipeId).map { it.name }
-                recipe.copy(ingredientList = ingredients)
-            }
+            try {
+                val localRecipes = recipeDao.getAllRecipes()
+                    .mapNotNull { recipeDao.getRecipeWithIngredientsMapped(it.recipeId) }
 
-            if (localRecipes.isNotEmpty()) {
-                allRecipes.addAll(localRecipes)
-                _recipes.value = allRecipes
-            } else {
-                if (getApplication<Application>().isOnline()) {
-                    loadMoreRecipes()
+                if (localRecipes.isNotEmpty()) {
+                    allRecipes.clear()
+                    allRecipes.addAll(localRecipes)
+                    _recipes.value = allRecipes.toList()
                 } else {
-                    Log.w("SupfoodViewModel", "No local recipes and no internet connection.")
+                    if (getApplication<Application>().isOnline()) {
+                        loadMoreRecipes()
+                    } else {
+                        Log.w("SupfoodViewModel", "No local recipes and no internet connection.")
+                    }
                 }
+            } catch (e: Exception) {
+                Log.e("SupfoodViewModel", "Error loading recipes from local database", e)
             }
         }
     }
@@ -67,19 +70,29 @@ class SupfoodViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             try {
                 if (getApplication<Application>().isOnline()) {
+                    //Online Mode
                     val newRecipes = repository.fetchAndSaveRecipes(currentFilter, currentPage)
 
                     if (newRecipes.isNotEmpty()) {
                         val updatedList = allRecipes.toMutableList().apply { addAll(newRecipes) }
-
                         _recipes.value = updatedList.toList()
                         currentPage++
                     } else {
                         hasMoreData = false
                     }
                 } else {
-                    Log.w("SupfoodViewModel", "No internet. Loading from local storage.")
-                    _recipes.value = recipeDao.getAllRecipes().toList()
+                    //Offline Mode
+                    Log.w("SupfoodViewModel", "No internet. Loading only local recipes.")
+                    val localRecipes = recipeDao.getAllRecipes()
+                        .mapNotNull { recipeDao.getRecipeWithIngredientsMapped(it.recipeId) }
+
+                    if (localRecipes.isNotEmpty()) {
+                        allRecipes.clear()
+                        allRecipes.addAll(localRecipes)
+                        _recipes.value = allRecipes.toList()
+                    } else {
+                        Log.w("SupfoodViewModel", "No local recipes available.")
+                    }
                 }
             } catch (e: Exception) {
                 Log.e("SupfoodViewModel", "Error loading recipes", e)
