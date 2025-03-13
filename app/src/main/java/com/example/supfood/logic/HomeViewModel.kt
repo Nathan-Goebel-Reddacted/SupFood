@@ -30,12 +30,20 @@ class SupfoodViewModel(application: Application) : AndroidViewModel(application)
     // Charger les recettes depuis la base locale
     private fun loadRecipesFromLocal() {
         viewModelScope.launch {
-            val localRecipes = recipeDao.getAllRecipes()
+            val localRecipes = recipeDao.getAllRecipes().map { recipe ->
+                val ingredients = recipeDao.getIngredientsForRecipe(recipe.recipeId).map { it.name }
+                recipe.copy(ingredientList = ingredients)
+            }
+
             if (localRecipes.isNotEmpty()) {
                 allRecipes.addAll(localRecipes)
                 _recipes.value = allRecipes
             } else {
-                loadMoreRecipes()
+                if (getApplication<Application>().isOnline()) {
+                    loadMoreRecipes()
+                } else {
+                    Log.w("SupfoodViewModel", "No local recipes and no internet connection.")
+                }
             }
         }
     }
@@ -53,42 +61,30 @@ class SupfoodViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun loadMoreRecipes() {
-        if (isLoading || !hasMoreData) {
-            Log.w("SupfoodViewModel", "Tentative de chargement ignorée : isLoading=$isLoading, hasMoreData=$hasMoreData")
-            return
-        }
+        if (isLoading || !hasMoreData) return
+
         isLoading = true
-
         viewModelScope.launch {
-            Log.d("SupfoodViewModel", "Début du chargement des recettes: page=$currentPage, filtre=$currentFilter")
-
             try {
-                val newRecipes = repository.fetchAndSaveRecipes(currentFilter, currentPage)
+                if (getApplication<Application>().isOnline()) {
+                    val newRecipes = repository.fetchAndSaveRecipes(currentFilter, currentPage)
 
-                if (newRecipes.isNotEmpty()) {
-                    allRecipes.addAll(newRecipes)
-                    currentPage++
+                    if (newRecipes.isNotEmpty()) {
+                        val updatedList = allRecipes.toMutableList().apply { addAll(newRecipes) }
 
-                    Log.d("SupfoodViewModel", "Nouvelle page chargée. Nombre total de recettes en mémoire: ${allRecipes.size}")
-
-                    // Limiter le nombre total de recettes en mémoire à 90 max
-                    if (allRecipes.size > 90) {
-                        val removedCount = allRecipes.size - 90
-                        allRecipes.subList(0, removedCount).clear()
-                        Log.i("SupfoodViewModel", "Suppression de $removedCount anciennes recettes pour limiter la mémoire")
+                        _recipes.value = updatedList.toList()
+                        currentPage++
+                    } else {
+                        hasMoreData = false
                     }
-
-                    _recipes.value = allRecipes.toList()
                 } else {
-                    hasMoreData = false
-                    Log.w("SupfoodViewModel", "Aucune nouvelle recette trouvée, arrêt du chargement")
+                    Log.w("SupfoodViewModel", "No internet. Loading from local storage.")
+                    _recipes.value = recipeDao.getAllRecipes().toList()
                 }
             } catch (e: Exception) {
-                Log.e("SupfoodViewModel", "Erreur lors du chargement des recettes", e)
+                Log.e("SupfoodViewModel", "Error loading recipes", e)
             }
-
             isLoading = false
-            Log.d("SupfoodViewModel", "Fin du chargement des recettes")
         }
     }
 
@@ -131,4 +127,5 @@ class SupfoodViewModel(application: Application) : AndroidViewModel(application)
             Log.d("SupfoodViewModel", "Fin du chargement des anciennes recettes")
         }
     }
+
 }

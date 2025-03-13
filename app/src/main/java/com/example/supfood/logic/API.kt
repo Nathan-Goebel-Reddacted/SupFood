@@ -64,16 +64,12 @@ class RecipeRepository(private val recipeDao: RecipeDao) {
         val recipes = searchRecipes(query, page, maxResults)
         val savedRecipes = mutableListOf<Recipe>()
 
-        if (recipes.isEmpty()) {
-            Log.d("RecipeRepository", "No more recipes.")
-        }
-
         for (recipe in recipes) {
             try {
-                val existingRecipe = recipeDao.getRecipeWithIngredientsMapped(recipe.recipeId)
+                val existingRecipe = recipeDao.getRecipeById(recipe.recipeId)
+
                 if (existingRecipe == null) {
-                    recipeDao.insertRecipe(recipe)
-                    recipeDao.saveRecipeWithIngredients(recipe, recipe.ingredientList)
+                    recipeDao.saveRecipeWithIngredients(recipe, recipe.ingredientList) // ✅ Ensures ingredients are saved
                     savedRecipes.add(recipe)
                     Log.d("RecipeRepository", "Saved new recipe: ${recipe.title}")
                 } else {

@@ -23,7 +23,7 @@ class MainActivity : ComponentActivity() {
             val navController = rememberNavController()
             val viewModel: SupfoodViewModel = viewModel()
             val recipes by viewModel.recipes.collectAsState()
-
+            Log.d("MainActivity", "SupfoodViewModel instance created")
             LaunchedEffect(recipes) {
                 if (recipes.isNotEmpty()) {
                     Log.d("Navigation", "Navigating to home screen")

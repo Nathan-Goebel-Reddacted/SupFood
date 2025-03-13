@@ -98,7 +98,9 @@ fun HomeScreen(navController: NavController, viewModel: SupfoodViewModel) {
             modifier = Modifier.fillMaxSize()
         ) {
             itemsIndexed(recipes) { index, recipe ->
-                RecipeItem(recipe, navController, index)
+                if (index < recipes.size) {
+                    RecipeItem(recipe, navController, index)
+                }
             }
 
 
